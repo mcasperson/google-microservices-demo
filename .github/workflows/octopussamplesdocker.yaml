@@ -1,6 +1,6 @@
 # This workflow builds and pushes images to the octopussamples DockerHub organization.
 
-name: Docker Build
+name: Octopus Samples Docker Build
 'on':
   workflow_dispatch: {}
   push: {}
