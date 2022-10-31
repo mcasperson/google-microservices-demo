@@ -1,0 +1,62 @@
+# Generate an sbom for the currencyservice
+
+permissions:
+  contents: read
+  packages: write
+
+name: Currencyservice SBOM
+'on':
+  workflow_dispatch: {}
+  push: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.14
+        with:
+          versionSpec: 5.x
+      - id: determine_version
+        name: Determine Version
+        uses: gittools/actions/gitversion/execute@v0.9.14
+        with:
+          additionalArguments: /overrideconfig mode=Mainline
+      - name: Install Octopus Deploy CLI
+        uses: OctopusDeploy/install-octopus-cli-action@v1
+        with:
+          version: latest
+      - uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+      - name: Install Cyclone DX
+        run: npm install --global @cyclonedx/cyclonedx-npm
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: src/currencyservice
+      - name: Build SBOM
+        run: cyclonedx-npm --output-file bom.xml
+        working-directory: src/currencyservice
+      - name: Build SBOM package
+        run: >
+          octo pack
+          --id currencyservice-sbom
+          --version ${{ steps.determine_version.outputs.semVer }}
+          --format zip
+          --include **/bom.xml
+        shell: bash
+        working-directory: src/currencyservice
+      - name: Publish SBOM file
+        run: >
+          mvn deploy:deploy-file
+          --batch-mode
+          -Dfile=currencyservice-sbom.${{ steps.determine_version.outputs.semVer }}.zip
+          -Durl="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/${{ github.repository }}"
+          -DgroupId=microservices-demo
+          -DartifactId=currencyservice-sbom
+          -Dversion=${{ steps.determine_version.outputs.semVer }}
+          -Dpackaging=zip
+        shell: bash
+        working-directory: src/currencyservice
