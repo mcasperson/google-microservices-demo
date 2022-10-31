@@ -38,9 +38,10 @@ jobs:
           --include **/bom.xml
         shell: bash
         working-directory: src/adservice
-      - run: >
+      - name: Publish SBOM file
+        run: >
           mvn deploy:deploy-file
-          -Dfile=adservice-sbom.${{ steps.determine_version.outputs.semVer }}
+          -Dfile=adservice-sbom.${{ steps.determine_version.outputs.semVer }}.zip
           -Durl="https://${{ github.actor }}:${{ secrets.GH_PACKAGES_PAT }}@maven.pkg.github.com/${{ github.repository }}"
           -DgroupId=microservices-demo
           -DartifactId=adservice-sbom
