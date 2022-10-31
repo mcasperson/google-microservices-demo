@@ -1,0 +1,60 @@
+# Generate an sbom for the loadgeneratorservice
+
+permissions:
+  contents: read
+  packages: write
+
+name: loadgeneratorservice SBOM
+'on':
+  workflow_dispatch: {}
+  push: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.14
+        with:
+          versionSpec: 5.x
+      - id: determine_version
+        name: Determine Version
+        uses: gittools/actions/gitversion/execute@v0.9.14
+        with:
+          additionalArguments: /overrideconfig mode=Mainline
+      - name: Install Octopus Deploy CLI
+        uses: OctopusDeploy/install-octopus-cli-action@v1
+        with:
+          version: latest
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      - name: Install Cyclone DX
+        run: pip install cyclonedx-bom
+      - name: Build SBOM
+        run: cyclonedx-py -r --output bom.xml
+        working-directory: src/loadgeneratorservice
+      - name: Build SBOM package
+        run: >
+          octo pack
+          --id loadgeneratorservice-sbom
+          --version ${{ steps.determine_version.outputs.semVer }}
+          --format zip
+          --include **/bom.xml
+        shell: bash
+        working-directory: src/loadgeneratorservice
+      - name: Publish SBOM file
+        run: >
+          mvn deploy:deploy-file
+          --batch-mode
+          -Dfile=loadgeneratorservice-sbom.${{ steps.determine_version.outputs.semVer }}.zip
+          -Durl="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/${{ github.repository }}"
+          -DgroupId=microservices-demo
+          -DartifactId=loadgeneratorservice-sbom
+          -Dversion=${{ steps.determine_version.outputs.semVer }}
+          -Dpackaging=zip
+        shell: bash
+        working-directory: src/loadgeneratorservice
