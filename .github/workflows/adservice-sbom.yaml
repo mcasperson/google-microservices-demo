@@ -1,5 +1,9 @@
 # Generate an sbom for the adservice
 
+permissions:
+  contents: read
+  packages: write
+
 name: Adservice SBOM
 'on':
   workflow_dispatch: {}
@@ -41,8 +45,9 @@ jobs:
       - name: Publish SBOM file
         run: >
           mvn deploy:deploy-file
+          --batch-mode
           -Dfile=adservice-sbom.${{ steps.determine_version.outputs.semVer }}.zip
-          -Durl="https://${{ github.actor }}:${{ secrets.GH_PACKAGES_PAT }}@maven.pkg.github.com/${{ github.repository }}"
+          -Durl="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/${{ github.repository }}"
           -DgroupId=microservices-demo
           -DartifactId=adservice-sbom
           -Dversion=${{ steps.determine_version.outputs.semVer }}
