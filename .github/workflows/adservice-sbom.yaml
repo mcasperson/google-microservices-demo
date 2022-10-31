@@ -39,7 +39,7 @@ jobs:
         shell: bash
         working-directory: src/adservice
       - run: >
-          ./mvnw deploy:deploy-file
+          mvn deploy:deploy-file
           -Dfile=adservice-sbom.${{ steps.determine_version.outputs.semVer }}
           -Durl="https://${{ github.actor }}:${{ secrets.GH_PACKAGES_PAT }}@maven.pkg.github.com/${{ github.repository }}"
           -DgroupId=microservices-demo
