@@ -371,7 +371,8 @@ def unassign_target_by_name(space_id, branch_name, target_name):
             target["EnvironmentIds"] = [a for a in target["EnvironmentIds"] if a != environment_id]
             if len(target["EnvironmentIds"]) == 0:
                 delete_target(target["Id"])
-                sys.stderr.write("Removed target " + target["Id"] + " because it was only assigned to the environment " + environment_id)
+                sys.stderr.write("Removed target " + target["Id"] + " because it was only assigned to the environment "
+                                 + environment_id)
             else:
                 put_response = put(url, headers=headers, json=target)
 
@@ -400,7 +401,8 @@ def unassign_target_by_role(space_id, branch_name, role_name):
 
             if len(target["EnvironmentIds"]) == 0:
                 delete_target(target["Id"])
-                sys.stderr.write("Removed target " + target["Id"] + " because it was only assigned to the environment " + environment_id)
+                sys.stderr.write("Removed target " + target["Id"] + " because it was only assigned to the environment "
+                                 + environment_id)
             else:
                 url = args.octopus_url + "/api/" + space_id + "/machines/" + target["Id"]
                 put_response = put(url, headers=headers, json=target)
