@@ -32,8 +32,11 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0.x
+      - name: Install CycloneDX
+        run: dotnet tool update --global CycloneDX
+        working-directory: src/cartservice
       - name: Build SBOM
-        run: docker run -v $PWD:/app cyclonedx/cyclonedx-dotnet /app -o /app
+        run: dotnet CycloneDX -o . cartservice.sln
         working-directory: src/cartservice
       - name: Build SBOM package
         run: >
