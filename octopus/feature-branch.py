@@ -1,12 +1,24 @@
 import sys
 import time
+from functools import partial
 
 from requests import get, post, delete
 import argparse
 
+from tenacity import retry, stop_after_delay, wait_fixed, retry_if_exception_type, stop_after_attempt
+
 
 class OctopusApiError(Exception):
     pass
+
+
+# Define shorthand decorator for the used settings.
+retry_on_communication_error = partial(
+    retry,
+    stop=stop_after_delay(60) | stop_after_attempt(3),  # max. 60 seconds wait.
+    wait=wait_fixed(0.4),  # wait 400ms
+    retry=retry_if_exception_type(OctopusApiError),
+)()
 
 
 def parse_args():
@@ -26,7 +38,8 @@ def parse_args():
     parser.add_argument('--deploymentStepName', dest='deployment_step_name', action='store',
                         help='The name of the step that deploys the packages', required=True)
     parser.add_argument('--deploymentPackageName', dest='deployment_package_name', action='store',
-                        help='The name of the package deployed in the step defined in deploymentStepName', required=True)
+                        help='The name of the package deployed in the step defined in deploymentStepName',
+                        required=True)
 
     return parser.parse_args()
 
@@ -84,6 +97,7 @@ def create_environment(space_id, branch_name):
     environment_id = get_resource_id(space_id, "environments", branch_name)
 
     if environment_id is not None:
+        sys.stderr.write("Found environment " + environment_id + "\n")
         return environment_id
 
     environment = {
@@ -94,6 +108,7 @@ def create_environment(space_id, branch_name):
     if not response:
         raise OctopusApiError
     json = response.json()
+    sys.stderr.write("Created environment " + json["Id"] + "\n")
     return json["Id"]
 
 
@@ -101,6 +116,7 @@ def create_lifecycle(space_id, environment_id, branch_name):
     lifecycle_id = get_resource_id(space_id, "lifecycles", branch_name)
 
     if lifecycle_id is not None:
+        sys.stderr.write("Found lifecycle " + lifecycle_id + "\n")
         return lifecycle_id
 
     lifecycle = {
@@ -132,6 +148,7 @@ def create_lifecycle(space_id, environment_id, branch_name):
     if not response:
         raise OctopusApiError
     json = response.json()
+    sys.stderr.write("Created lifecycle " + json["Id"] + "\n")
     return json["Id"]
 
 
@@ -155,10 +172,11 @@ def find_channel(space_id, project_id, branch_name):
 
 
 def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, branch_name):
-    lifecycle_id = find_channel(space_id, project_id, branch_name)
+    channel_id = find_channel(space_id, project_id, branch_name)
 
-    if lifecycle_id is not None:
-        return lifecycle_id
+    if channel_id is not None:
+        sys.stderr.write("Found channel " + channel_id + "\n")
+        return channel_id
 
     # Create the channel json
     channel = {
@@ -182,6 +200,7 @@ def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, 
     if not response:
         raise OctopusApiError
     json = response.json()
+    sys.stderr.write("Created channel " + json["Id"] + "\n")
     return json["Id"]
 
 
@@ -257,14 +276,17 @@ def delete_environment(space_id, branch_name):
         sys.stderr.write("Deleted environment " + environment_id + "\n")
 
 
+@retry_on_communication_error
 def create_feature_branch():
     space_id = get_space_id(args.octopus_space)
     project_id = get_resource_id(space_id, "projects", args.octopus_project)
     environment_id = create_environment(space_id, args.branch_name)
     lifecycle_id = create_lifecycle(space_id, environment_id, args.branch_name)
-    create_channel(space_id, project_id, lifecycle_id, args.deployment_step_name, args.deployment_package_name, args.branch_name)
+    create_channel(space_id, project_id, lifecycle_id, args.deployment_step_name, args.deployment_package_name,
+                   args.branch_name)
 
 
+@retry_on_communication_error
 def delete_feature_branch():
     space_id = get_space_id(args.octopus_space)
     project_id = get_resource_id(space_id, "projects", args.octopus_project)
