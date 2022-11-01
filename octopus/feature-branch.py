@@ -168,7 +168,7 @@ def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, 
         'IsDefault': False,
         'LifecycleId': lifecycle_id,
         'Rules': [{
-            'Tag': '.+',
+            'Tag': '^' + branch_name + '.*$',
             'Actions': [step_name],
             'ActionPackages': [{
                 'DeploymentAction': step_name,
