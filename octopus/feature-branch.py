@@ -220,7 +220,7 @@ def cancel_tasks(space_id, project_id, branch_name):
             task_json = task_response.json()
 
             if not task_json["IsCompleted"]:
-                sys.stderr.write("Task " + task_id + " has not completed an will be cancelled\n")
+                sys.stderr.write("Task " + task_id + " has not completed and will be cancelled\n")
                 number_active_tasks += 1
                 cancel_url = args.octopus_url + "/api/" + space_id + "/tasks/" + task_id + "/cancel"
                 response = post(cancel_url, headers=headers)
