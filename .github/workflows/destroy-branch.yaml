@@ -41,5 +41,6 @@ jobs:
             --octopusProject "Frontend" \
             --branchName ${{ env.fixedbranch }} \
             --deploymentStepName "Deploy App" \
-            --deploymentPackageName frontend
+            --deploymentPackageName frontend \
+            --targetRole demo-k8s-cluster
         shell: bash
