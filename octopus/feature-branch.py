@@ -192,7 +192,7 @@ def cancel_tasks(space_id, project_id, branch_name):
         url = args.octopus_url + "/api/" + space_id + "/deployments?projects=" + project_id + "&channels=" + channel_id
         releases = get(url, headers=headers)
         json = releases.json()
-        sys.stderr.write("Found " + len(json["Items"]) + " deployments")
+        sys.stderr.write("Found " + str(len(json["Items"])) + " deployments")
 
         for deployment in json["Items"]:
             task_id = deployment["TaskId"]
