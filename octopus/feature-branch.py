@@ -7,6 +7,8 @@ import argparse
 
 from tenacity import retry, stop_after_delay, wait_fixed, retry_if_exception_type, stop_after_attempt
 
+IGNORED_BRANCHES = ["main", "master"]
+
 
 class OctopusApiError(Exception):
     pass
@@ -348,6 +350,7 @@ def delete_target(space_id, target_id):
     if not response:
         raise OctopusApiError
 
+
 def unassign_target_by_name(space_id, branch_name, target_name):
     if target_name is None or target_name is None or target_name.strip() == '':
         return
@@ -384,7 +387,6 @@ def unassign_target_by_name(space_id, branch_name, target_name):
             sys.stderr.write("Environment " + environment_id + " not assigned to target " + target_id + "\n")
 
 
-
 def unassign_target_by_role(space_id, branch_name, role_name):
     if role_name is None or role_name is None or role_name.strip() == '':
         pass
@@ -413,6 +415,7 @@ def unassign_target_by_role(space_id, branch_name, role_name):
                 sys.stderr.write("Removed environment " + environment_id + " to target " + target["Id"] + "\n")
         else:
             sys.stderr.write("Environment " + environment_id + " not assigned to target " + target["Id"] + "\n")
+
 
 @retry_on_communication_error
 def create_feature_branch():
@@ -445,11 +448,17 @@ def delete_feature_branch():
     delete_environment(space_id, args.branch_name)
 
 
+def main():
+    if args.branch_name in IGNORED_BRANCHES:
+        return
+
+    if args.action == 'create':
+        create_feature_branch()
+
+    if args.action == 'delete':
+        delete_feature_branch()
+
+
 args = parse_args()
 headers = build_headers()
-
-if args.action == 'create':
-    create_feature_branch()
-
-if args.action == 'delete':
-    delete_feature_branch()
+main()
