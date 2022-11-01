@@ -259,7 +259,7 @@ def create_feature_branch():
     project_id = get_resource_id(space_id, "projects", args.octopus_project)
     environment_id = create_environment(space_id, args.branch_name)
     lifecycle_id = create_lifecycle(space_id, environment_id, args.branch_name)
-    channel_id = create_channel(space_id, project_id, lifecycle_id, args.deployment_step_name, args.deployment_package_name, args.branch_name)
+    create_channel(space_id, project_id, lifecycle_id, args.deployment_step_name, args.deployment_package_name, args.branch_name)
 
 
 def delete_feature_branch():
