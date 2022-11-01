@@ -256,7 +256,7 @@ def assign_target_by_role(space_id, environment_id, role_name):
 
     targets = find_targets_by_role(space_id, role_name)
     for target in targets:
-        if environment_id in target["EnvironmentIds"]:
+        if environment_id not in target["EnvironmentIds"]:
             target["EnvironmentIds"].append(environment_id)
             url = args.octopus_url + "/api/" + space_id + "/machines/" + target["Id"]
             put_response = put(url, headers=headers, json=target)
