@@ -26,6 +26,8 @@ jobs:
       - id: fixed_branch_name
         name: Create branch name
         run: |
+          BRANCH_NAME=${{ github.event.ref }}
+          BRANCH_NAME=${BRANCH_NAME#refs/heads/}
           FIXED_BRANCH_NAME=${BRANCH_NAME//[^a-zA-Z0-9-]/-} 
           echo "fixedbranch=$FIXED_BRANCH_NAME" >> $GITHUB_ENV
         shell: bash
