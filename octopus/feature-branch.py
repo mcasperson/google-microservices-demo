@@ -1,4 +1,6 @@
 import sys
+import time
+
 from requests import get, post, delete
 import argparse
 
@@ -183,12 +185,44 @@ def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, 
     return json["Id"]
 
 
-def cancel_tasks(space_id, project_id):
-    None
+def cancel_tasks(space_id, project_id, branch_name):
+    number_active_tasks = 0
+    channel_id = find_channel(space_id, project_id, branch_name)
+    if channel_id is not None:
+        url = args.octopus_url + "/api/" + space_id + "/deployments?projects=" + project_id + "&channels=" + channel_id
+        releases = get(url, headers=headers)
+        json = releases.json()
+        sys.stderr.write("Found " + len(json["Items"]) + " deployments")
+
+        for deployment in json["Items"]:
+            task_id = deployment["TaskId"]
+            task_url = args.octopus_url + "/api/" + space_id + "/tasks/" + task_id
+            task_response = get(task_url, headers=headers)
+            task_json = task_response.json()
+
+            if not task_json["IsCompleted"]:
+                sys.stderr.write("Task " + task_id + " has not completed an will be cancelled")
+                number_active_tasks += 1
+                cancel_url = args.octopus_url + "/api/" + space_id + "/tasks/" + task_id + "/cancel"
+                response = post(cancel_url, headers=headers)
+                if not response:
+                    raise OctopusApiError
+
+    return number_active_tasks
 
 
-def delete_releases(space_id, project_id):
-    None
+def delete_releases(space_id, project_id, branch_name):
+    channel_id = find_channel(space_id, project_id, branch_name)
+    if channel_id is not None:
+        url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/releases"
+        releases = get(url, headers=headers)
+        json = releases.json()
+        channel_releases = [a for a in json["Items"] if a["ChannelId"] == channel_id]
+        for release in channel_releases["Items"]:
+            url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/releases/" + release["Id"]
+            response = delete(url, headers=headers)
+            if not response:
+                raise OctopusApiError
 
 
 def delete_channel(space_id, project_id, branch_name):
@@ -231,8 +265,14 @@ def create_feature_branch():
 def delete_feature_branch():
     space_id = get_space_id(args.octopus_space)
     project_id = get_resource_id(space_id, "projects", args.octopus_project)
-    cancel_tasks(space_id, project_id)
-    delete_releases(space_id, project_id)
+
+    while True:
+        tasks = cancel_tasks(space_id, project_id, args.branch_name)
+        if tasks == 0:
+            break
+        time.sleep(10)
+
+    delete_releases(space_id, project_id, args.branch_name)
     delete_channel(space_id, project_id, args.branch_name)
     delete_lifecycle(space_id, args.branch_name)
     delete_environment(space_id, args.branch_name)
