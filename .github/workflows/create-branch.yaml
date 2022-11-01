@@ -37,8 +37,8 @@ jobs:
           python feature-branch.py \
             --action create \
             --octopusUrl ${{ secrets.OCTOPUS_SERVER }} \
-            --octopusApiKey ${{ secrets.OCTOPUS_APIKEY }} \ 
-            --octopusSpace ${{ secrets.OCTOPUS_SPACE }} \  
+            --octopusApiKey ${{ secrets.OCTOPUS_APIKEY }} \
+            --octopusSpace ${{ secrets.OCTOPUS_SPACE }} \
             --octopusProject "Frontend" \
             --branchName ${{ env.fixedbranch }} \
             --deploymentStepName "Deploy App" \
