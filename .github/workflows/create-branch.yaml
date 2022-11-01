@@ -24,14 +24,16 @@ jobs:
           python-version: 3.x
 
       - id: fixed_branch_name
+        name: Create branch name
         run: |
           FIXED_BRANCH_NAME=${BRANCH_NAME//[^a-zA-Z0-9-]/-} 
           echo "fixedbranch=$FIXED_BRANCH_NAME" >> $GITHUB_ENV
         shell: bash
 
-      - name: Delete branch
+      - name: Create branch
         run: |
           cd octopus
+          pip install -r requirements.txt
           python feature-branch.py \
             --action create \
             --octopusUrl ${{ secrets.OCTOPUS_SERVER }} \

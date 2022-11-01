@@ -21,6 +21,7 @@ jobs:
       # Need some extra logic to get the name of the deleted branch.
       # See https://stackoverflow.com/questions/62281418/in-github-actions-is-it-possible-to-access-the-name-of-a-deleted-branch.
       - id: fixed_branch_name
+        name: Create branch name
         run: |
           BRANCH_NAME=${{ github.event.ref }}
           BRANCH_NAME=${BRANCH_NAME#refs/heads/}
@@ -31,6 +32,7 @@ jobs:
       - name: Delete branch
         run: |
           cd octopus
+          pip install -r requirements.txt
           python feature-branch.py \
             --action delete \
             --octopusUrl ${{ secrets.OCTOPUS_SERVER }} \
