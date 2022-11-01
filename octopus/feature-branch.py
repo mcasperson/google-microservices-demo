@@ -218,7 +218,7 @@ def delete_releases(space_id, project_id, branch_name):
         releases = get(url, headers=headers)
         json = releases.json()
         channel_releases = [a for a in json["Items"] if a["ChannelId"] == channel_id]
-        for release in channel_releases["Items"]:
+        for release in channel_releases:
             url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/releases/" + release["Id"]
             response = delete(url, headers=headers)
             if not response:
@@ -232,6 +232,7 @@ def delete_channel(space_id, project_id, branch_name):
         response = delete(url, headers=headers)
         if not response:
             raise OctopusApiError
+        sys.stderr.write("Deleted channel " + channel_id)
 
 
 def delete_lifecycle(space_id, branch_name):
@@ -242,6 +243,7 @@ def delete_lifecycle(space_id, branch_name):
         response = delete(url, headers=headers)
         if not response:
             raise OctopusApiError
+        sys.stderr.write("Deleted lifecycle " + lifecycle_id)
 
 
 def delete_environment(space_id, branch_name):
@@ -252,6 +254,7 @@ def delete_environment(space_id, branch_name):
         response = delete(url, headers=headers)
         if not response:
             raise OctopusApiError
+        sys.stderr.write("Deleted environment " + environment_id)
 
 
 def create_feature_branch():
