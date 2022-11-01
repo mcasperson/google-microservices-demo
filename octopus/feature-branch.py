@@ -341,6 +341,13 @@ def delete_environment(space_id, branch_name):
         sys.stderr.write("Deleted environment " + environment_id + "\n")
 
 
+def delete_target(space_id, target_id):
+    url = args.octopus_url + "/api/" + space_id + "/machines/" + target_id
+    response = delete(url, headers=headers)
+
+    if not response:
+        raise OctopusApiError
+
 def unassign_target_by_name(space_id, branch_name, target_name):
     if target_name is None or target_name is None or target_name.strip() == '':
         return
@@ -362,12 +369,16 @@ def unassign_target_by_name(space_id, branch_name, target_name):
 
         if environment_id not in target["EnvironmentIds"]:
             target["EnvironmentIds"] = [a for a in target["EnvironmentIds"] if a != environment_id]
-            put_response = put(url, headers=headers, json=target)
+            if len(target["EnvironmentIds"]) == 0:
+                delete_target(target["Id"])
+                sys.stderr.write("Removed target " + target["Id"] + " because it was only assigned to the environment " + environment_id)
+            else:
+                put_response = put(url, headers=headers, json=target)
 
-            if not put_response:
-                raise OctopusApiError
+                if not put_response:
+                    raise OctopusApiError
 
-            sys.stderr.write("Removed environment " + environment_id + " from target " + target_id + "\n")
+                sys.stderr.write("Removed environment " + environment_id + " from target " + target_id + "\n")
         else:
             sys.stderr.write("Environment " + environment_id + " not assigned to target " + target_id + "\n")
 
@@ -386,13 +397,18 @@ def unassign_target_by_role(space_id, branch_name, role_name):
     for target in targets:
         if environment_id not in target["EnvironmentIds"]:
             target["EnvironmentIds"] = [a for a in target["EnvironmentIds"] if a != environment_id]
-            url = args.octopus_url + "/api/" + space_id + "/machines/" + target["Id"]
-            put_response = put(url, headers=headers, json=target)
 
-            if not put_response:
-                raise OctopusApiError
+            if len(target["EnvironmentIds"]) == 0:
+                delete_target(target["Id"])
+                sys.stderr.write("Removed target " + target["Id"] + " because it was only assigned to the environment " + environment_id)
+            else:
+                url = args.octopus_url + "/api/" + space_id + "/machines/" + target["Id"]
+                put_response = put(url, headers=headers, json=target)
 
-            sys.stderr.write("Removed environment " + environment_id + " to target " + target["Id"] + "\n")
+                if not put_response:
+                    raise OctopusApiError
+
+                sys.stderr.write("Removed environment " + environment_id + " to target " + target["Id"] + "\n")
         else:
             sys.stderr.write("Environment " + environment_id + " not assigned to target " + target["Id"] + "\n")
 
