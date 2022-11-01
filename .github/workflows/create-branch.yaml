@@ -1,0 +1,44 @@
+name: Feature Branch
+
+on:
+  create:
+  push:
+    branches-ignore:
+      - main
+      - master
+    paths:
+      - '.github/workflows/create-branch.yaml'
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - id: fixed_branch_name
+        run: |
+          FIXED_BRANCH_NAME=${BRANCH_NAME//[^a-zA-Z0-9-]/-} 
+          echo "fixedbranch=$FIXED_BRANCH_NAME" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Delete branch
+        run: |
+          cd octopus
+          python feature-branch.py \
+            --action create \
+            --octopusUrl ${{ secrets.OCTOPUS_SERVER }} \
+            --octopusApiKey ${{ secrets.OCTOPUS_APIKEY }} \ 
+            --octopusSpace ${{ secrets.OCTOPUS_SPACE }} \  
+            --octopusProject "Frontend" \
+            --branchName ${{ env.fixedbranch }} \
+            --deploymentStepName "Deploy App" \
+            --deploymentPackageName frontend
+        shell: bash

@@ -1,0 +1,43 @@
+name: Feature Branch Destroy
+on:
+  delete:
+    branches-ignore:
+      - main
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      # Need some extra logic to get the name of the deleted branch.
+      # See https://stackoverflow.com/questions/62281418/in-github-actions-is-it-possible-to-access-the-name-of-a-deleted-branch.
+      - id: fixed_branch_name
+        run: |
+          BRANCH_NAME=${{ github.event.ref }}
+          BRANCH_NAME=${BRANCH_NAME#refs/heads/}
+          FIXED_BRANCH_NAME=${BRANCH_NAME//[^a-zA-Z0-9-]/-} 
+          echo "fixedbranch=$FIXED_BRANCH_NAME" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Delete branch
+        run: |
+          cd octopus
+          python feature-branch.py \
+            --action delete \
+            --octopusUrl ${{ secrets.OCTOPUS_SERVER }} \
+            --octopusApiKey ${{ secrets.OCTOPUS_APIKEY }} \ 
+            --octopusSpace ${{ secrets.OCTOPUS_SPACE }} \  
+            --octopusProject "Frontend" \
+            --branchName ${{ env.fixedbranch }} \
+            --deploymentStepName "Deploy App" \
+            --deploymentPackageName frontend
+        shell: bash
