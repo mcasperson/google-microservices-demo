@@ -192,7 +192,7 @@ def cancel_tasks(space_id, project_id, branch_name):
         url = args.octopus_url + "/api/" + space_id + "/deployments?projects=" + project_id + "&channels=" + channel_id
         releases = get(url, headers=headers)
         json = releases.json()
-        sys.stderr.write("Found " + str(len(json["Items"])) + " deployments")
+        sys.stderr.write("Found " + str(len(json["Items"])) + " deployments\n")
 
         for deployment in json["Items"]:
             task_id = deployment["TaskId"]
@@ -201,7 +201,7 @@ def cancel_tasks(space_id, project_id, branch_name):
             task_json = task_response.json()
 
             if not task_json["IsCompleted"]:
-                sys.stderr.write("Task " + task_id + " has not completed an will be cancelled")
+                sys.stderr.write("Task " + task_id + " has not completed an will be cancelled\n")
                 number_active_tasks += 1
                 cancel_url = args.octopus_url + "/api/" + space_id + "/tasks/" + task_id + "/cancel"
                 response = post(cancel_url, headers=headers)
@@ -232,7 +232,7 @@ def delete_channel(space_id, project_id, branch_name):
         response = delete(url, headers=headers)
         if not response:
             raise OctopusApiError
-        sys.stderr.write("Deleted channel " + channel_id)
+        sys.stderr.write("Deleted channel " + channel_id + "\n")
 
 
 def delete_lifecycle(space_id, branch_name):
@@ -243,7 +243,7 @@ def delete_lifecycle(space_id, branch_name):
         response = delete(url, headers=headers)
         if not response:
             raise OctopusApiError
-        sys.stderr.write("Deleted lifecycle " + lifecycle_id)
+        sys.stderr.write("Deleted lifecycle " + lifecycle_id + "\n")
 
 
 def delete_environment(space_id, branch_name):
@@ -254,7 +254,7 @@ def delete_environment(space_id, branch_name):
         response = delete(url, headers=headers)
         if not response:
             raise OctopusApiError
-        sys.stderr.write("Deleted environment " + environment_id)
+        sys.stderr.write("Deleted environment " + environment_id + "\n")
 
 
 def create_feature_branch():
