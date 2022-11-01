@@ -41,7 +41,10 @@ def parse_args():
                         help='The name of the package deployed in the step defined in deploymentStepName',
                         required=True)
     parser.add_argument('--targetName', dest='target_name', action='store',
-                        help='The name of the target to assign to the new environment',
+                        help='Targets with this name are (un)assigned to the new environment',
+                        required=False)
+    parser.add_argument('--targetRole', dest='target_role', action='store',
+                        help='Targets with this role are (un)assigned to the new environment',
                         required=False)
 
     return parser.parse_args()
@@ -67,7 +70,7 @@ def get_space_id(space_name):
 
 
 def get_resource_id(space_id, resource_type, resource_name):
-    if space_id is None:
+    if space_id is None or resource_name is None or len(resource_name.strip()) == 0:
         return None
 
     url = args.octopus_url + "/api/" + space_id + "/" + resource_type + "?partialName=" \
@@ -174,6 +177,20 @@ def find_channel(space_id, project_id, branch_name):
     return first_id
 
 
+def find_targets_by_role(space_id, role_name):
+    if space_id is None or len(role_name.strip()) == 0:
+        return None
+
+    url = args.octopus_url + "/api/" + space_id + "/machines?take=1000"
+    response = get(url, headers=headers)
+
+    if not response:
+        raise OctopusApiError
+
+    json = response.json()
+    return [a for a in json["Items"] if role_name in a["Roles"]]
+
+
 def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, branch_name):
     channel_id = find_channel(space_id, project_id, branch_name)
 
@@ -207,8 +224,8 @@ def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, 
     return json["Id"]
 
 
-def assign_target(space_id, environment_id, target_name):
-    if target_name is None or target_name.strip() == '':
+def assign_target_by_name(space_id, environment_id, target_name):
+    if target_name is None or target_name is None or target_name.strip() == '':
         pass
 
     target_id = get_resource_id(space_id, "machines", target_name)
@@ -221,7 +238,7 @@ def assign_target(space_id, environment_id, target_name):
 
         target = get_response.json()
 
-        if target["EnvironmentIds"].index(environment_id) == -1:
+        if environment_id not in target["EnvironmentIds"]:
             target["EnvironmentIds"].append(environment_id)
             put_response = put(url, headers=headers, json=target)
 
@@ -231,6 +248,25 @@ def assign_target(space_id, environment_id, target_name):
             sys.stderr.write("Added environment " + environment_id + " to target " + target_id + "\n")
         else:
             sys.stderr.write("Environment " + environment_id + " already assigned to target " + target_id + "\n")
+
+
+def assign_target_by_role(space_id, environment_id, role_name):
+    if role_name is None or role_name is None or role_name.strip() == '':
+        pass
+
+    targets = find_targets_by_role(space_id, role_name)
+    for target in targets:
+        if environment_id in target["EnvironmentIds"]:
+            target["EnvironmentIds"].append(environment_id)
+            url = args.octopus_url + "/api/" + space_id + "/machines/" + target["Id"]
+            put_response = put(url, headers=headers, json=target)
+
+            if not put_response:
+                raise OctopusApiError
+
+            sys.stderr.write("Added environment " + environment_id + " to target " + target["Id"] + "\n")
+        else:
+            sys.stderr.write("Environment " + environment_id + " already assigned to target " + target["Id"] + "\n")
 
 
 def cancel_tasks(space_id, project_id, branch_name):
@@ -305,8 +341,8 @@ def delete_environment(space_id, branch_name):
         sys.stderr.write("Deleted environment " + environment_id + "\n")
 
 
-def unassign_target(space_id, branch_name, target_name):
-    if target_name is None or target_name.strip() == '':
+def unassign_target_by_name(space_id, branch_name, target_name):
+    if target_name is None or target_name is None or target_name.strip() == '':
         return
 
     environment_id = get_resource_id(space_id, "environments", branch_name)
@@ -324,7 +360,7 @@ def unassign_target(space_id, branch_name, target_name):
 
         target = get_response.json()
 
-        if target["EnvironmentIds"].index(environment_id) != -1:
+        if environment_id not in target["EnvironmentIds"]:
             target["EnvironmentIds"] = [a for a in target["EnvironmentIds"] if a != environment_id]
             put_response = put(url, headers=headers, json=target)
 
@@ -335,6 +371,31 @@ def unassign_target(space_id, branch_name, target_name):
         else:
             sys.stderr.write("Environment " + environment_id + " not assigned to target " + target_id + "\n")
 
+
+
+def unassign_target_by_role(space_id, branch_name, role_name):
+    if role_name is None or role_name is None or role_name.strip() == '':
+        pass
+
+    environment_id = get_resource_id(space_id, "environments", branch_name)
+
+    if environment_id is None:
+        return
+
+    targets = find_targets_by_role(space_id, role_name)
+    for target in targets:
+        if environment_id not in target["EnvironmentIds"]:
+            target["EnvironmentIds"] = [a for a in target["EnvironmentIds"] if a != environment_id]
+            url = args.octopus_url + "/api/" + space_id + "/machines/" + target["Id"]
+            put_response = put(url, headers=headers, json=target)
+
+            if not put_response:
+                raise OctopusApiError
+
+            sys.stderr.write("Removed environment " + environment_id + " to target " + target["Id"] + "\n")
+        else:
+            sys.stderr.write("Environment " + environment_id + " not assigned to target " + target["Id"] + "\n")
+
 @retry_on_communication_error
 def create_feature_branch():
     space_id = get_space_id(args.octopus_space)
@@ -343,7 +404,8 @@ def create_feature_branch():
     lifecycle_id = create_lifecycle(space_id, environment_id, args.branch_name)
     create_channel(space_id, project_id, lifecycle_id, args.deployment_step_name, args.deployment_package_name,
                    args.branch_name)
-    assign_target(space_id, environment_id, args.target_name)
+    assign_target_by_name(space_id, environment_id, args.target_name)
+    assign_target_by_role(space_id, environment_id, args.target_role)
 
 
 @retry_on_communication_error
@@ -360,7 +422,8 @@ def delete_feature_branch():
     delete_releases(space_id, project_id, args.branch_name)
     delete_channel(space_id, project_id, args.branch_name)
     delete_lifecycle(space_id, args.branch_name)
-    unassign_target(space_id, args.branch_name, args.target_name)
+    unassign_target_by_name(space_id, args.branch_name, args.target_name)
+    unassign_target_by_role(space_id, args.branch_name, args.target_role)
     delete_environment(space_id, args.branch_name)
 
 
