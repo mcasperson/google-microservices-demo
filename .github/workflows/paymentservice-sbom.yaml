@@ -7,7 +7,11 @@ permissions:
 name: Paymentservice SBOM
 'on':
   workflow_dispatch: {}
-  push: {}
+  push:
+    paths-ignore:
+      - '.github/workflows/create-branch.yaml'
+      - '.github/workflows/destroy-branch.yaml'
+      - 'octopus/**'
 jobs:
   build:
     runs-on: ubuntu-latest
