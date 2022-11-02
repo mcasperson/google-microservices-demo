@@ -38,10 +38,11 @@ def parse_args():
     parser.add_argument('--branchName', dest='branch_name', action='store', help='The Octopus environment',
                         required=True)
     parser.add_argument('--deploymentStepName', dest='deployment_step_name', action='store',
-                        help='The name of the step that deploys the packages', required=True)
+                        help='The name of the step that deploys the packages. '
+                             + 'Leave blank to apply default rules to all steps with packages.', required=False)
     parser.add_argument('--deploymentPackageName', dest='deployment_package_name', action='store',
                         help='The name of the package deployed in the step defined in deploymentStepName',
-                        required=True)
+                        required=False)
     parser.add_argument('--targetName', dest='target_name', action='store',
                         help='Targets with this name are (un)assigned to the new environment',
                         required=False)
@@ -193,12 +194,39 @@ def find_targets_by_role(space_id, role_name):
     return [a for a in json["Items"] if role_name in a["Roles"]]
 
 
+def find_packages(space_id, project_id):
+    url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/deploymentprocesses"
+    response = get(url, headers=headers)
+    if not response:
+        raise OctopusApiError
+    json = response.json()
+
+    packages = []
+
+    for step in json["Steps"]:
+        name = step["Name"]
+        for action in step["Actions"]:
+            for package in action["Packages"]:
+                packages.append({'DeploymentAction': name, 'PackageReference': package["Name"]})
+
+    return packages
+
+
 def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, branch_name):
     channel_id = find_channel(space_id, project_id, branch_name)
 
     if channel_id is not None:
         sys.stderr.write("Found channel " + channel_id + "\n")
         return channel_id
+
+    packages = find_packages(space_id, project_id) if step_name is None or len(step_name.strip()) == 0 else \
+        [{'DeploymentAction': step_name, 'PackageReference': package_name}]
+
+    rules = list(map(lambda x: {
+        'Tag': '^' + branch_name + '.*$',
+        'Actions': [x["DeploymentAction"]],
+        'ActionPackages': [x]},
+                     packages))
 
     # Create the channel json
     channel = {
@@ -207,14 +235,7 @@ def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, 
         'SpaceId': space_id,
         'IsDefault': False,
         'LifecycleId': lifecycle_id,
-        'Rules': [{
-            'Tag': '^' + branch_name + '.*$',
-            'Actions': [step_name],
-            'ActionPackages': [{
-                'DeploymentAction': step_name,
-                'PackageReference': package_name
-            }]
-        }]
+        'Rules': rules
     }
 
     url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/channels"
@@ -398,7 +419,7 @@ def unassign_target_by_role(space_id, branch_name, role_name):
 
     targets = find_targets_by_role(space_id, role_name)
     for target in targets:
-        if environment_id not in target["EnvironmentIds"]:
+        if environment_id in target["EnvironmentIds"]:
             target["EnvironmentIds"] = [a for a in target["EnvironmentIds"] if a != environment_id]
 
             if len(target["EnvironmentIds"]) == 0:
