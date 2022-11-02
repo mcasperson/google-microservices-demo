@@ -40,7 +40,5 @@ jobs:
             --octopusSpace ${{ secrets.OCTOPUS_SPACE }} \
             --octopusProject "Frontend" \
             --branchName ${{ env.fixedbranch }} \
-            --deploymentStepName "Deploy App" \
-            --deploymentPackageName frontend \
             --targetRole demo-k8s-cluster
         shell: bash
