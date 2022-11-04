@@ -23,6 +23,14 @@ retry_on_communication_error = partial(
 )()
 
 
+def is_not_blank(s):
+    return bool(s and not s.isspace())
+
+
+def is_blank(s):
+    return not is_not_blank(s)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Manage feature branches in Octopus.')
     parser.add_argument('--action', dest='action', action='store', help='create or delete',
@@ -58,6 +66,9 @@ def build_headers():
 
 
 def get_space_id(space_name):
+    if is_blank(space_name):
+        return None
+
     url = args.octopus_url + "/api/spaces?partialName=" + space_name.strip() + "&take=1000"
     response = get(url, headers=headers)
     spaces_json = response.json()
@@ -73,7 +84,7 @@ def get_space_id(space_name):
 
 
 def get_resource_id(space_id, resource_type, resource_name):
-    if space_id is None or resource_name is None or len(resource_name.strip()) == 0:
+    if is_blank(space_id) or is_blank(resource_type) or is_blank(resource_name):
         return None
 
     url = args.octopus_url + "/api/" + space_id + "/" + resource_type + "?partialName=" \
@@ -92,7 +103,7 @@ def get_resource_id(space_id, resource_type, resource_name):
 
 
 def get_resource(space_id, resource_type, resource_id):
-    if space_id is None:
+    if is_blank(space_id) or is_blank(resource_type) or is_blank(resource_id):
         return None
 
     url = args.octopus_url + "/api/" + space_id + "/" + resource_type + "/" + resource_id
@@ -103,6 +114,9 @@ def get_resource(space_id, resource_type, resource_id):
 
 
 def create_environment(space_id, branch_name):
+    if is_blank(space_id) or is_blank(branch_name):
+        return None
+
     environment_id = get_resource_id(space_id, "environments", branch_name)
 
     if environment_id is not None:
@@ -122,6 +136,9 @@ def create_environment(space_id, branch_name):
 
 
 def create_lifecycle(space_id, environment_id, branch_name):
+    if is_blank(space_id) or is_blank(environment_id) or is_blank(branch_name):
+        return None
+
     lifecycle_id = get_resource_id(space_id, "lifecycles", branch_name)
 
     if lifecycle_id is not None:
@@ -162,7 +179,7 @@ def create_lifecycle(space_id, environment_id, branch_name):
 
 
 def find_channel(space_id, project_id, branch_name):
-    if space_id is None:
+    if is_blank(space_id) or is_blank(project_id) or is_blank(branch_name):
         return None
 
     url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/channels?partialName=" \
@@ -181,7 +198,7 @@ def find_channel(space_id, project_id, branch_name):
 
 
 def find_targets_by_role(space_id, role_name):
-    if space_id is None or len(role_name.strip()) == 0:
+    if is_blank(space_id) or is_blank(role_name):
         return None
 
     url = args.octopus_url + "/api/" + space_id + "/machines?take=1000"
@@ -195,6 +212,9 @@ def find_targets_by_role(space_id, role_name):
 
 
 def find_packages(space_id, project_id):
+    if is_blank(space_id) or is_blank(project_id):
+        return None
+
     url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/deploymentprocesses"
     response = get(url, headers=headers)
     if not response:
@@ -213,6 +233,9 @@ def find_packages(space_id, project_id):
 
 
 def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, branch_name):
+    if is_blank(space_id) or is_blank(project_id) or is_blank(lifecycle_id) or is_blank(branch_name):
+        return None
+
     channel_id = find_channel(space_id, project_id, branch_name)
 
     if channel_id is not None:
@@ -225,12 +248,11 @@ def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, 
     rules = list(map(lambda x: {
         'Tag': '^' + branch_name + '.*$',
         'Actions': [x["DeploymentAction"]],
-        'ActionPackages': [x]},
-                     packages))
+        'ActionPackages': [x]}, packages))
 
     # Create the channel json
     channel = {
-        'ProjectId': step_name,
+        'ProjectId': project_id,
         'Name': branch_name,
         'SpaceId': space_id,
         'IsDefault': False,
@@ -248,8 +270,8 @@ def create_channel(space_id, project_id, lifecycle_id, step_name, package_name, 
 
 
 def assign_target_by_name(space_id, environment_id, target_name):
-    if target_name is None or target_name is None or target_name.strip() == '':
-        pass
+    if is_blank(space_id) or is_blank(environment_id) or is_blank(target_name):
+        return
 
     target_id = get_resource_id(space_id, "machines", target_name)
     if target_id is not None:
@@ -274,8 +296,8 @@ def assign_target_by_name(space_id, environment_id, target_name):
 
 
 def assign_target_by_role(space_id, environment_id, role_name):
-    if role_name is None or role_name is None or role_name.strip() == '':
-        pass
+    if is_blank(space_id) or is_blank(environment_id) or is_blank(role_name):
+        return
 
     targets = find_targets_by_role(space_id, role_name)
     for target in targets:
@@ -293,6 +315,9 @@ def assign_target_by_role(space_id, environment_id, role_name):
 
 
 def cancel_tasks(space_id, project_id, branch_name):
+    if is_blank(space_id) or is_blank(project_id) or is_blank(branch_name):
+        return None
+
     number_active_tasks = 0
     channel_id = find_channel(space_id, project_id, branch_name)
     if channel_id is not None:
@@ -319,6 +344,9 @@ def cancel_tasks(space_id, project_id, branch_name):
 
 
 def delete_releases(space_id, project_id, branch_name):
+    if is_blank(space_id) or is_blank(project_id) or is_blank(branch_name):
+        return
+
     channel_id = find_channel(space_id, project_id, branch_name)
     if channel_id is not None:
         url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/releases"
@@ -333,6 +361,9 @@ def delete_releases(space_id, project_id, branch_name):
 
 
 def delete_channel(space_id, project_id, branch_name):
+    if is_blank(space_id) or is_blank(project_id) or is_blank(branch_name):
+        return
+
     channel_id = find_channel(space_id, project_id, branch_name)
     if channel_id is not None:
         url = args.octopus_url + "/api/" + space_id + "/projects/" + project_id + "/channels/" + channel_id
@@ -343,6 +374,9 @@ def delete_channel(space_id, project_id, branch_name):
 
 
 def delete_lifecycle(space_id, branch_name):
+    if is_blank(space_id) or is_blank(branch_name):
+        return
+
     lifecycle_id = get_resource_id(space_id, "lifecycles", branch_name)
 
     if lifecycle_id is not None:
@@ -354,6 +388,9 @@ def delete_lifecycle(space_id, branch_name):
 
 
 def delete_environment(space_id, branch_name):
+    if is_blank(space_id) or is_blank(branch_name):
+        return
+
     environment_id = get_resource_id(space_id, "environments", branch_name)
 
     if environment_id is not None:
@@ -365,6 +402,9 @@ def delete_environment(space_id, branch_name):
 
 
 def delete_target(space_id, target_id):
+    if is_blank(space_id) or is_blank(target_id):
+        return
+
     url = args.octopus_url + "/api/" + space_id + "/machines/" + target_id
     response = delete(url, headers=headers)
 
@@ -373,7 +413,7 @@ def delete_target(space_id, target_id):
 
 
 def unassign_target_by_name(space_id, branch_name, target_name):
-    if target_name is None or target_name is None or target_name.strip() == '':
+    if is_blank(space_id) or is_blank(branch_name) or is_blank(target_name):
         return
 
     environment_id = get_resource_id(space_id, "environments", branch_name)
@@ -409,8 +449,8 @@ def unassign_target_by_name(space_id, branch_name, target_name):
 
 
 def unassign_target_by_role(space_id, branch_name, role_name):
-    if role_name is None or role_name is None or role_name.strip() == '':
-        pass
+    if is_blank(space_id) or is_blank(branch_name) or is_blank(role_name):
+        return
 
     environment_id = get_resource_id(space_id, "environments", branch_name)
 
