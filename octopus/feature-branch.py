@@ -76,8 +76,15 @@ def get_space_id(space_name):
     filtered_items = [a for a in spaces_json["Items"] if a["Name"] == space_name.strip()]
 
     if len(filtered_items) == 0:
-        sys.stderr.write("The space called " + space_name + " could not be found.\n")
-        return None
+        # Check to see if the space name was actually a space ID
+        url = args.octopus_url + "/api/spaces/" + space_name
+        response = get(url, headers=headers)
+        if not response:
+            sys.stderr.write("The space called " + space_name + " could not be found.\n")
+            return None
+
+        # A valid response means the space name was a valid ID
+        return space_name
 
     first_id = filtered_items[0]["Id"]
     return first_id
