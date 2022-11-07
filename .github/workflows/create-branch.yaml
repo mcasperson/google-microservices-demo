@@ -43,5 +43,6 @@ jobs:
             --octopusSpace ${{ secrets.OCTOPUS_SPACE }} \
             --octopusProject "Frontend" \
             --branchName ${{ env.fixedbranch }} \
-            --targetRole demo-k8s-cluster
+            --targetRole demo-k8s-cluster \
+            --targetEnvironment Development
         shell: bash
