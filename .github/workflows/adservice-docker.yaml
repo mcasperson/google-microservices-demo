@@ -13,6 +13,18 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: '0'
+      - id: fixed_branch_name
+        name: Create branch name
+        run: |
+          BRANCH_NAME=${{ github.event.ref }}
+          BRANCH_NAME=${BRANCH_NAME#refs/heads/}
+          FIXED_BRANCH_NAME=${BRANCH_NAME//[^a-zA-Z0-9-]/-} 
+          echo "fixedbranch=$FIXED_BRANCH_NAME" >> $GITHUB_ENV
+        shell: bash
+      - name: Install Octopus Deploy CLI
+        uses: OctopusDeploy/install-octopus-cli-action@v1
+        with:
+          version: latest
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -37,3 +49,25 @@ jobs:
           context: "{{defaultContext}}:src/adservice"
           push: true
           tags: octopussamples/adservice:${{ steps.determine_version.outputs.semVer }}
+      - name: Create Mainline Octopus Release
+        if: github.ref == 'refs/heads/main'
+        uses: OctopusDeploy/create-release-action@v1
+        with:
+          api_key: ${{ secrets.OCTOPUS_APIKEY }}
+          space: ${{ secrets.OCTOPUS_SPACE }}
+          project: Ad Service
+          channel: Mainline
+          server: ${{ secrets.OCTOPUS_SERVER }}
+          deploy_to: Development
+          packages: ${{ steps.determine_version.outputs.semVer }}
+      - name: Create Branch Octopus Release
+        if: github.ref != 'refs/heads/main'
+        uses: OctopusDeploy/create-release-action@v1
+        with:
+          api_key: ${{ secrets.OCTOPUS_APIKEY }}
+          space: ${{ secrets.OCTOPUS_SPACE }}
+          project: Ad Service
+          channel: ${{ env.fixedbranch }}
+          server: ${{ secrets.OCTOPUS_SERVER }}
+          deploy_to: Development
+          packages: ${{ steps.determine_version.outputs.semVer }}
