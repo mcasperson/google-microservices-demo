@@ -101,5 +101,5 @@ jobs:
 #          project: Recommendation Service
 #          channel: ${{ env.fixedbranch }}
 #          server: ${{ secrets.OCTOPUS_SERVER }}
-#          deploy_to: Payment Service
+#          deploy_to: ${{ env.fixedbranch }}
 #          package_version: ${{ steps.determine_version.outputs.semVer }}

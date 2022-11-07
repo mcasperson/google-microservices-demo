@@ -100,8 +100,8 @@ jobs:
 #        with:
 #          api_key: ${{ secrets.OCTOPUS_APIKEY }}
 #          space: ${{ secrets.OCTOPUS_SPACE }}
-#          project: Email Service
+#          project: Payment Service
 #          channel: ${{ env.fixedbranch }}
 #          server: ${{ secrets.OCTOPUS_SERVER }}
-#          deploy_to: Payment Service
+#          deploy_to: ${{ env.fixedbranch }}
 #          package_version: ${{ steps.determine_version.outputs.semVer }}
