@@ -76,8 +76,9 @@ jobs:
           -DgroupId=microservices-demo
           -DartifactId=loadgenerator-sbom
           -Dversion=${{ steps.determine_version.outputs.semVer }}
-          -Dpackaging=zip
-        shell: bash
+          -Dpackaging=zip;
+           exit 0
+        shell: "bash -l {0}" # Allow commands to fail by removing the default "-e" argument
         working-directory: src/loadgenerator
       - name: Create Mainline Octopus Release
         if: github.ref == 'refs/heads/main'
