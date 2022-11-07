@@ -91,14 +91,15 @@ jobs:
           server: ${{ secrets.OCTOPUS_SERVER }}
           deploy_to: Development
           package_version: ${{ steps.determine_version.outputs.semVer }}
-      - name: Create Branch Octopus Release
-        if: github.ref != 'refs/heads/main'
-        uses: OctopusDeploy/create-release-action@v1
-        with:
-          api_key: ${{ secrets.OCTOPUS_APIKEY }}
-          space: ${{ secrets.OCTOPUS_SPACE }}
-          project: Email Service
-          channel: ${{ env.fixedbranch }}
-          server: ${{ secrets.OCTOPUS_SERVER }}
-          deploy_to: Development
-          package_version: ${{ steps.determine_version.outputs.semVer }}
+      # Only the frontend project has feature branches set up
+#      - name: Create Branch Octopus Release
+#        if: github.ref != 'refs/heads/main'
+#        uses: OctopusDeploy/create-release-action@v1
+#        with:
+#          api_key: ${{ secrets.OCTOPUS_APIKEY }}
+#          space: ${{ secrets.OCTOPUS_SPACE }}
+#          project: Email Service
+#          channel: ${{ env.fixedbranch }}
+#          server: ${{ secrets.OCTOPUS_SERVER }}
+#          deploy_to: Development
+#          package_version: ${{ steps.determine_version.outputs.semVer }}
