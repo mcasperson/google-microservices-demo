@@ -41,7 +41,7 @@ jobs:
         run: npm ci
         working-directory: src/currencyservice
       - name: Build SBOM
-        run: cyclonedx-npm --output-file bom.xml
+        run: cyclonedx-npm --ignore-npm-errors --output-file bom.xml
         working-directory: src/currencyservice
       - name: Build SBOM package
         run: >
