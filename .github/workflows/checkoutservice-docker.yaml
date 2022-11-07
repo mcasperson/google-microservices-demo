@@ -46,7 +46,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: "{{defaultContext}}:src/checkoutservice/src"
+          context: "{{defaultContext}}:src/checkoutservice"
           push: true
           tags: octopussamples/checkoutservice:${{ steps.determine_version.outputs.semVer }}
       - name: Set up Go
