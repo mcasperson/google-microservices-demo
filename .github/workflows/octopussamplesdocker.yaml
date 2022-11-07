@@ -39,4 +39,4 @@ jobs:
           sudo install skaffold /usr/local/bin/
           skaffold version
       - name: Build and push images
-        run: skaffold build --default-repo=octopussamples --tag=${{ steps.determine_version.outputs.semVer }}
+        run: skaffold build --build-concurrency 0 --default-repo=octopussamples --tag=${{ steps.determine_version.outputs.semVer }}
