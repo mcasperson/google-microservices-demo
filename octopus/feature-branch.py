@@ -356,8 +356,8 @@ def assign_target_by_role_and_environment(space_id, environment_id, role_name, e
                     raise OctopusApiError
 
                 sys.stderr.write("Added environment " + environment_id + " to target " + target["Id"] + "\n")
-        else:
-            sys.stderr.write("Environment " + environment_id + " already assigned to target " + target["Id"] + "\n")
+            else:
+                sys.stderr.write("Environment " + environment_id + " already assigned to target " + target["Id"] + "\n")
 
 
 def cancel_tasks(space_id, project_id, branch_name):
