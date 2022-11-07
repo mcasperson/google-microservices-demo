@@ -49,6 +49,36 @@ jobs:
           context: "{{defaultContext}}:src/checkoutservice/src"
           push: true
           tags: octopussamples/checkoutservice:${{ steps.determine_version.outputs.semVer }}
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.17
+      - name: Install Cyclone DX
+        run: go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@latest
+      - name: Build SBOM
+        run: cyclonedx-gomod app -output bom.xml .
+        working-directory: src/checkoutservice
+      - name: Build SBOM package
+        run: >
+          octo pack
+          --id checkoutservice-sbom
+          --version ${{ steps.determine_version.outputs.semVer }}
+          --format zip
+          --include **/bom.xml
+        shell: bash
+        working-directory: src/checkoutservice
+      - name: Publish SBOM file
+        run: >
+          mvn deploy:deploy-file
+          --batch-mode
+          -Dfile=checkoutservice-sbom.${{ steps.determine_version.outputs.semVer }}.zip
+          -Durl="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/${{ github.repository }}"
+          -DgroupId=microservices-demo
+          -DartifactId=checkoutservice-sbom
+          -Dversion=${{ steps.determine_version.outputs.semVer }}
+          -Dpackaging=zip
+        shell: bash
+        working-directory: src/checkoutservice
       - name: Create Mainline Octopus Release
         if: github.ref == 'refs/heads/main'
         uses: OctopusDeploy/create-release-action@v1

@@ -49,6 +49,32 @@ jobs:
           context: "{{defaultContext}}:src/adservice"
           push: true
           tags: octopussamples/adservice:${{ steps.determine_version.outputs.semVer }}
+      - name: Build SBOM
+        run: |
+          chmod +x gradlew
+          ./gradlew cyclonedxBom
+        working-directory: src/adservice
+      - name: Build SBOM package
+        run: >
+          octo pack
+          --id adservice-sbom
+          --version ${{ steps.determine_version.outputs.semVer }}
+          --format zip
+          --include **/bom.xml
+        shell: bash
+        working-directory: src/adservice
+      - name: Publish SBOM file
+        run: >
+          mvn deploy:deploy-file
+          --batch-mode
+          -Dfile=adservice-sbom.${{ steps.determine_version.outputs.semVer }}.zip
+          -Durl="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/${{ github.repository }}"
+          -DgroupId=microservices-demo
+          -DartifactId=adservice-sbom
+          -Dversion=${{ steps.determine_version.outputs.semVer }}
+          -Dpackaging=zip
+        shell: bash
+        working-directory: src/adservice
       - name: Create Mainline Octopus Release
         if: github.ref == 'refs/heads/main'
         uses: OctopusDeploy/create-release-action@v1

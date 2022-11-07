@@ -49,6 +49,36 @@ jobs:
           context: "{{defaultContext}}:src/loadgenerator"
           push: true
           tags: octopussamples/loadgenerator:${{ steps.determine_version.outputs.semVer }}
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      - name: Install Cyclone DX
+        run: pip install cyclonedx-bom
+      - name: Build SBOM
+        run: cyclonedx-py -r --output bom.xml
+        working-directory: src/loadgenerator
+      - name: Build SBOM package
+        run: >
+          octo pack
+          --id loadgenerator-sbom
+          --version ${{ steps.determine_version.outputs.semVer }}
+          --format zip
+          --include **/bom.xml
+        shell: bash
+        working-directory: src/loadgenerator
+      - name: Publish SBOM file
+        run: >
+          mvn deploy:deploy-file
+          --batch-mode
+          -Dfile=loadgenerator-sbom.${{ steps.determine_version.outputs.semVer }}.zip
+          -Durl="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/${{ github.repository }}"
+          -DgroupId=microservices-demo
+          -DartifactId=loadgenerator-sbom
+          -Dversion=${{ steps.determine_version.outputs.semVer }}
+          -Dpackaging=zip
+        shell: bash
+        working-directory: src/loadgenerator
       - name: Create Mainline Octopus Release
         if: github.ref == 'refs/heads/main'
         uses: OctopusDeploy/create-release-action@v1

@@ -49,6 +49,38 @@ jobs:
           context: "{{defaultContext}}:src/currencyservice"
           push: true
           tags: octopussamples/currencyservice:${{ steps.determine_version.outputs.semVer }}
+      - uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+      - name: Install Cyclone DX
+        run: npm install --global @cyclonedx/cyclonedx-npm
+      - name: Install Dependencies
+        run: npm install
+        working-directory: src/currencyservice
+      - name: Build SBOM
+        run: cyclonedx-npm --ignore-npm-errors --output-file bom.xml
+        working-directory: src/currencyservice
+      - name: Build SBOM package
+        run: >
+          octo pack
+          --id currencyservice-sbom
+          --version ${{ steps.determine_version.outputs.semVer }}
+          --format zip
+          --include **/bom.xml
+        shell: bash
+        working-directory: src/currencyservice
+      - name: Publish SBOM file
+        run: >
+          mvn deploy:deploy-file
+          --batch-mode
+          -Dfile=currencyservice-sbom.${{ steps.determine_version.outputs.semVer }}.zip
+          -Durl="https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@maven.pkg.github.com/${{ github.repository }}"
+          -DgroupId=microservices-demo
+          -DartifactId=currencyservice-sbom
+          -Dversion=${{ steps.determine_version.outputs.semVer }}
+          -Dpackaging=zip
+        shell: bash
+        working-directory: src/currencyservice
       - name: Create Mainline Octopus Release
         if: github.ref == 'refs/heads/main'
         uses: OctopusDeploy/create-release-action@v1
