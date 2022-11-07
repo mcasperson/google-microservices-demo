@@ -33,33 +33,34 @@ def is_blank(s):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Manage feature branches in Octopus.')
-    parser.add_argument('--action', dest='action', action='store', help='create or delete',
+    parser.add_argument('--action', dest='action', action='store', help='create or delete.',
                         required=True)
-    parser.add_argument('--octopusUrl', dest='octopus_url', action='store', help='The Octopus server URL',
+    parser.add_argument('--octopusUrl', dest='octopus_url', action='store', help='The Octopus server URL.',
                         required=True)
     parser.add_argument('--octopusApiKey', dest='octopus_api_key', action='store', help='The Octopus API key',
                         required=True)
-    parser.add_argument('--octopusSpace', dest='octopus_space', action='store', help='The Octopus space',
+    parser.add_argument('--octopusSpace', dest='octopus_space', action='store', help='The Octopus space.',
                         required=True)
     parser.add_argument('--octopusProject', dest='octopus_project', action='store',
                         help='A comma separated list of Octopus projects', required=True)
-    parser.add_argument('--branchName', dest='branch_name', action='store', help='The Octopus environment',
+    parser.add_argument('--branchName', dest='branch_name', action='store', help='The Octopus environment.',
                         required=True)
     parser.add_argument('--deploymentStepName', dest='deployment_step_name', action='store',
                         help='The name of the step that deploys the packages. '
                              + 'Leave blank to apply default rules to all steps with packages.', required=False)
     parser.add_argument('--deploymentPackageName', dest='deployment_package_name', action='store',
-                        help='The name of the package deployed in the step defined in deploymentStepName',
+                        help='The name of the package deployed in the step defined in deploymentStepName.',
                         required=False)
     parser.add_argument('--targetName', dest='target_name', action='store',
-                        help='Targets with this name are (un)assigned to the new environment',
+                        help='Targets with this name are (un)assigned to the new environment. ' +
+                             'Target name takes precedence over target role if both are specified.',
                         required=False)
     parser.add_argument('--targetRole', dest='target_role', action='store',
-                        help='Targets with this role are (un)assigned to the new environment',
+                        help='Targets with this role are (un)assigned to the new environment.',
                         required=False)
     parser.add_argument('--targetEnvironment', dest='target_environment', action='store',
                         help='Targets assigned to this environment and the role passed in via --targetRole '
-                             + 'are (un)assigned to the new environment',
+                             + 'are (un)assigned to the new environment.',
                         required=False)
 
     return parser.parse_args()
