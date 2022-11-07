@@ -1,6 +1,6 @@
 # This workflow builds and pushes images to the octopussamples DockerHub organization.
 
-name: Octopus Samples Docker Build
+name: Cart Service Docker Build
 'on':
   workflow_dispatch: {}
   push:
@@ -33,10 +33,9 @@ jobs:
         uses: gittools/actions/gitversion/execute@v0.9.14
         with:
           additionalArguments: /overrideconfig mode=Mainline
-      - name: Install Skaffold
-        run: |
-          curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
-          sudo install skaffold /usr/local/bin/
-          skaffold version
-      - name: Build and push images
-        run: skaffold build --build-concurrency 0 --default-repo=octopussamples --tag=${{ steps.determine_version.outputs.semVer }}
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: "{{defaultContext}}:src/cartservice/src"
+          push: true
+          tags: octopussamples/cartservice:${{ steps.determine_version.outputs.semVer }}

@@ -1,0 +1,41 @@
+# This workflow builds and pushes images to the octopussamples DockerHub organization.
+
+name: Shipping Service Docker Build
+'on':
+  workflow_dispatch: {}
+  push:
+    paths-ignore:
+      - '.github/workflows/create-branch.yaml'
+      - '.github/workflows/destroy-branch.yaml'
+      - 'octopus/**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_SAMPLES_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_SAMPLES_PASSWORD }}
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v0.9.14
+        with:
+          versionSpec: 5.x
+      - id: determine_version
+        name: Determine Version
+        uses: gittools/actions/gitversion/execute@v0.9.14
+        with:
+          additionalArguments: /overrideconfig mode=Mainline
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: "{{defaultContext}}:src/shippingservice"
+          push: true
+          tags: octopussamples/shippingservice:${{ steps.determine_version.outputs.semVer }}
