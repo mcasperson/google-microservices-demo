@@ -4,10 +4,8 @@ name: Product Service Docker Build
 'on':
   workflow_dispatch: {}
   push:
-    paths-ignore:
-      - '.github/workflows/create-branch.yaml'
-      - '.github/workflows/destroy-branch.yaml'
-      - 'octopus/**'
+    paths:
+      - 'src/productcatalogservice/**'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,6 +34,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          context: "{{defaultContext}}:src/productservice"
+          context: "{{defaultContext}}:src/productcatalogservice"
           push: true
-          tags: octopussamples/productservice:${{ steps.determine_version.outputs.semVer }}
+          tags: octopussamples/productcatalogservice:${{ steps.determine_version.outputs.semVer }}

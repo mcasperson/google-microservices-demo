@@ -8,10 +8,8 @@ name: Loadgenerator SBOM
 'on':
   workflow_dispatch: {}
   push:
-    paths-ignore:
-      - '.github/workflows/create-branch.yaml'
-      - '.github/workflows/destroy-branch.yaml'
-      - 'octopus/**'
+    paths:
+      - 'src/loadgenerator/**'
 jobs:
   build:
     runs-on: ubuntu-latest
