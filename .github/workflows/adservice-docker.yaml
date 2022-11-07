@@ -70,4 +70,4 @@ jobs:
           channel: ${{ env.fixedbranch }}
           server: ${{ secrets.OCTOPUS_SERVER }}
           deploy_to: Development
-          packages: ${{ steps.determine_version.outputs.semVer }}
+          package_version: ${{ steps.determine_version.outputs.semVer }}
