@@ -338,6 +338,7 @@ def assign_target_by_role(space_id, environment_id, role_name):
         else:
             sys.stderr.write("Environment " + environment_id + " already assigned to target " + target["Id"] + "\n")
 
+
 def assign_target_by_role_and_environment(space_id, environment_id, role_name, existing_environment_name):
     if is_blank(space_id) or is_blank(environment_id) or is_blank(role_name) or is_blank(existing_environment_name):
         return
