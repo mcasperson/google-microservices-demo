@@ -90,7 +90,7 @@ jobs:
           channel: Mainline
           server: ${{ secrets.OCTOPUS_SERVER }}
           deploy_to: Development
-          package: |
+          packages: |
             Deploy App:loadgenerator:${{ steps.determine_version.outputs.semVer }}
             Check for Vulnerabilities:loadgenerator-sbom:${{ steps.determine_version.outputs.semVer }}
       # Only the frontend project has feature branches set up
